@@ -3,16 +3,34 @@
 <head>
   <title>Cohesion-Barber Platform Payment</title>
   <script src="https://js.stripe.com/v3/"></script>
+  <style>
+    #card-element {
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      margin-bottom: 12px;
+      max-width: 400px;
+      background: white;
+    }
+    button {
+      padding: 10px 20px;
+      background-color: #0066ff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+  </style>
 </head>
 <body>
   <h2>Pay $1 to Stylist</h2>
   <form id="payment-form">
-    <div id="card-element"><!-- Stripe Card Element injects here --></div>
+    <div id="card-element"></div>
     <button type="submit">Pay $1</button>
   </form>
 
   <script>
-    const stripe = Stripe("pk_test_51RLQeoCVVPDhAwrvywntXX5VX0yOOmxFOUNyNxuiPcXGKoZtTeRkE4lqW5scgYmiu20dOrZgwTTvWR0WaoU3UNSE00aTaujuEx"); // Replace with your test publishable key
+    const stripe = Stripe("pk_test_51RLQeoCVVPDhAwrvywntXX5VX0yOOmxFOUNyNxuiPcXGKoZtTeRkE4lqW5scgYmiu20dOrZgwTTvWR0WaoU3UNSE00aTaujuEx");
 
     fetch("/create-payment-intent", {
       method: "POST",
@@ -36,9 +54,9 @@
         });
 
         if (result.error) {
-          alert("Payment failed: " + result.error.message);
+          alert("❌ Payment failed: " + result.error.message);
         } else {
-          alert("💸 Payment successful!");
+          alert("✅ Payment successful!");
         }
       });
     });
