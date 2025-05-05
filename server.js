@@ -1,13 +1,16 @@
 const express = require('express');
 const path = require('path');
-const app = express();
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 require('dotenv').config();
 
-app.use(express.json());
-app.use(express.static('public')); // Optional if you move HTML there
+const app = express();
 
-// ✅ Serve index.html on root
+app.use(express.json());
+
+// ✅ Serve static files like index.html
+app.use(express.static(__dirname));
+
+// ✅ Serve index.html for root URL
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
@@ -17,18 +20,21 @@ app.post('/create-payment-intent', async (req, res) => {
 
   try {
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: 100, // $1
+      amount: 100,
       currency: 'usd',
-      application_fee_amount: 20, // $0.20 for platform
+      application_fee_amount: 20,
       transfer_data: {
         destination: connectedAccountId,
       },
     });
 
-    res.send({ clientSecret: paymentIntent.client_secret });
+    res.send({
+      clientSecret: paymentIntent.client_secret,
+    });
   } catch (err) {
     res.status(500).send({ error: err.message });
   }
 });
 
-app.listen(4242, () => console.log('Server running on port 4242'));
+const PORT = process.env.PORT || 4242;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
