@@ -1,36 +1,44 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Barber Payment</title>
+  <title>Cohesion-Barber Platform Payment</title>
   <script src="https://js.stripe.com/v3/"></script>
 </head>
 <body>
+  <h2>Pay $1 to Stylist</h2>
   <form id="payment-form">
-    <div id="card-element"></div>
+    <div id="card-element"><!-- Stripe Card Element injects here --></div>
     <button type="submit">Pay $1</button>
   </form>
+
   <script>
+    const stripe = Stripe("pk_test_YourPublicKeyHere"); // Replace with your test publishable key
+
     fetch("/create-payment-intent", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ connectedAccountId: "acct_yourConnectedAccountId" })
+      body: JSON.stringify({
+        connectedAccountId: "acct_YourTestConnectedAccountHere"
+      }),
     })
     .then(res => res.json())
     .then(({ clientSecret }) => {
-      const stripe = Stripe("pk_test_yourPublicKey");
       const elements = stripe.elements();
       const card = elements.create("card");
       card.mount("#card-element");
 
-      document.querySelector("#payment-form").addEventListener("submit", async (e) => {
+      document.getElementById("payment-form").addEventListener("submit", async (e) => {
         e.preventDefault();
         const result = await stripe.confirmCardPayment(clientSecret, {
-          payment_method: { card: card }
+          payment_method: {
+            card: card
+          }
         });
+
         if (result.error) {
-          alert(result.error.message);
+          alert("Payment failed: " + result.error.message);
         } else {
-          alert("Payment succeeded!");
+          alert("💸 Payment successful!");
         }
       });
     });
