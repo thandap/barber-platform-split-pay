@@ -12,13 +12,13 @@
   </form>
 
   <script>
-    const stripe = Stripe("pk_test_YourPublicKeyHere"); // Replace with your test publishable key
+    const stripe = Stripe("pk_test_51RLQeoCVVPDhAwrvywntXX5VX0yOOmxFOUNyNxuiPcXGKoZtTeRkE4lqW5scgYmiu20dOrZgwTTvWR0WaoU3UNSE00aTaujuEx"); // Replace with your test publishable key
 
     fetch("/create-payment-intent", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        connectedAccountId: "acct_YourTestConnectedAccountHere"
+        connectedAccountId: "acct_1RLQyNE8MyLBL6wn"
       }),
     })
     .then(res => res.json())
