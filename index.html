@@ -10,21 +10,47 @@
 
     <form id="payment-form">
         <div class="form-group">
-            <label for="card-number-element">Card Number</label>
+            <label for="stylistA">Stylist A ID</label>
+            <input type="text" id="stylistA" value="acct_XXXXX" />
+        </div>
+
+        <div class="form-group">
+            <label for="tipA">Tip for Stylist A ($)</label>
+            <input type="number" id="tipA" value="5" />
+        </div>
+
+        <div class="form-group">
+            <label for="stylistB">Stylist B ID</label>
+            <input type="text" id="stylistB" value="acct_YYYYY" />
+        </div>
+
+        <div class="form-group">
+            <label for="tipB">Tip for Stylist B ($)</label>
+            <input type="number" id="tipB" value="10" />
+        </div>
+
+        <div class="form-group">
+            <label>Card Number</label>
             <div id="card-number-element" class="stripe-input"></div>
         </div>
+
         <div class="form-group">
-            <label for="card-expiry-element">Expiration Date</label>
+            <label>Expiration Date</label>
             <div id="card-expiry-element" class="stripe-input"></div>
         </div>
+
         <div class="form-group">
-            <label for="card-cvc-element">CVC</label>
+            <label>CVC</label>
             <div id="card-cvc-element" class="stripe-input"></div>
         </div>
+
         <div class="form-group">
-            <label for="postal-code">ZIP / Postal Code</label>
+            <label>ZIP / Postal Code</label>
             <input type="text" id="postal-code" name="postal_code" />
         </div>
+
+        <div id="card-errors" style="color:red;"></div>
+
         <button type="submit">Pay Now</button>
     </form>
 
@@ -32,8 +58,15 @@
         document.addEventListener("DOMContentLoaded", async () => {
             const stripe = Stripe("pk_test_XXXXXXXXXXXXXXXXXXXXXXXX");
             const elements = stripe.elements();
-            const card = elements.create("card", { hidePostalCode: false });
-            card.mount("#card-element");
+
+            const cardNumber = elements.create("cardNumber");
+            cardNumber.mount("#card-number-element");
+
+            const cardExpiry = elements.create("cardExpiry");
+            cardExpiry.mount("#card-expiry-element");
+
+            const cardCvc = elements.create("cardCvc");
+            cardCvc.mount("#card-cvc-element");
 
             const form = document.getElementById("payment-form");
 
@@ -45,27 +78,29 @@
                 const tipA = parseFloat(document.getElementById("tipA").value || 0);
                 const tipB = parseFloat(document.getElementById("tipB").value || 0);
 
-                console.log("Starting payment with tips:", tipA, tipB);
-
                 const res = await fetch("/create-payment-intent", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ stylistA, stylistB, tipA, tipB })
+                    body: JSON.stringify({ tipA, tipB })
                 });
 
                 const { clientSecret, paymentIntentId } = await res.json();
-                console.log("Received clientSecret:", clientSecret);
 
                 const result = await stripe.confirmCardPayment(clientSecret, {
-                    payment_method: { card }
+                    payment_method: {
+                        card: cardNumber,
+                        billing_details: {
+                            address: {
+                                postal_code: document.getElementById("postal-code").value
+                            }
+                        }
+                    }
                 });
 
                 if (result.error) {
                     document.getElementById("card-errors").textContent = result.error.message;
                     return;
                 }
-
-                console.log("Payment succeeded. Confirming transfers...");
 
                 const transferRes = await fetch("/confirm-transfers", {
                     method: "POST",
