@@ -4,7 +4,6 @@
     <title>Multi-Stylist Payment + Tip</title>
     <script src="https://js.stripe.com/v3/"></script>
     <style>
-        /* same styles as before (card-element, form, inputs, etc.) */
         body {
             font-family: Arial, sans-serif;
             max-width: 500px;
@@ -22,12 +21,18 @@
         form {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 16px;
         }
 
-        label {
-            font-weight: bold;
+        .form-group {
+            display: flex;
+            flex-direction: column;
         }
+
+            .form-group label {
+                font-weight: bold;
+                margin-bottom: 4px;
+            }
 
         input {
             padding: 8px;
@@ -66,23 +71,41 @@
             button:hover {
                 background-color: #1a5fb4;
             }
-      </style>
+    </style>
 </head>
 <body>
     <h2>Pay for Two Haircuts + Tips</h2>
 
     <form id="payment-form">
-        <label>Stylist A ID: <input id="stylistA" value="acct_XXXXA" /></label><br />
-        <label>Tip for Stylist A ($): <input id="tipA" value="5" /></label><br /><br />
+        <div class="form-group">
+            <label for="stylistA">Stylist A ID:</label>
+            <input id="stylistA" value="acct_XXXXA" />
+        </div>
 
-        <label>Stylist B ID: <input id="stylistB" value="acct_XXXXB" /></label><br />
-        <label>Tip for Stylist B ($): <input id="tipB" value="10" /></label><br /><br />
+        <div class="form-group">
+            <label for="tipA">Tip for Stylist A ($):</label>
+            <input id="tipA" value="5" />
+        </div>
 
-        <div id="card-element"></div>
-        <div id="card-errors"></div><br />
+        <div class="form-group">
+            <label for="stylistB">Stylist B ID:</label>
+            <input id="stylistB" value="acct_XXXXB" />
+        </div>
+
+        <div class="form-group">
+            <label for="tipB">Tip for Stylist B ($):</label>
+            <input id="tipB" value="10" />
+        </div>
+
+        <div class="form-group">
+            <label>Card Details:</label>
+            <div id="card-element"></div>
+            <div id="card-errors"></div>
+        </div>
 
         <button type="submit">Pay Now</button>
     </form>
+
 
     <script>
         document.addEventListener("DOMContentLoaded", async () => {
