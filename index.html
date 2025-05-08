@@ -4,7 +4,7 @@
     <title>Multi-Stylist Payment + Tip</title>
     <script src="https://js.stripe.com/v3/"></script>
     <style>
-        <style >
+        /* Place your CSS rules here without nesting another <style> tag */
         #card-element {
             border: 1px solid #ccc;
             padding: 10px;
@@ -44,7 +44,6 @@
             margin-top: 8px;
         }
     </style>
-
 </head>
 <body>
     <h2>Pay for Two Haircuts + Tips</h2>
@@ -78,8 +77,6 @@
 
         <button type="submit">Pay Now</button>
     </form>
-
-
     <script>
         document.addEventListener("DOMContentLoaded", async () => {
             const stripe = Stripe("pk_test_XXXXXXXXXXXXXXXXXXXXXXXX");
