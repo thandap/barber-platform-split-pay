@@ -3,55 +3,70 @@
 <head>
     <title>Multi-Stylist Payment + Tip</title>
     <script src="https://js.stripe.com/v3/"></script>
-    <head>
-        <title>Multi-Stylist Payment + Tip</title>
+    <style>
+        /* same styles as before (card-element, form, inputs, etc.) */
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 500px;
+            margin: 30px auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
 
-        <!-- 🔧 Add this here -->
-        <style>
-            #card-element {
-                border: 1px solid #ccc;
-                padding: 10px;
-                border-radius: 6px;
-                max-width: 400px;
-                margin-top: 10px;
+        h2 {
+            text-align: center;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        label {
+            font-weight: bold;
+        }
+
+        input {
+            padding: 8px;
+            font-size: 16px;
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        #card-element {
+            border: 1px solid #ccc;
+            padding: 12px;
+            border-radius: 6px;
+            background: #f9f9f9;
+            max-width: 100%;
+        }
+
+        #card-errors {
+            color: red;
+            font-size: 14px;
+            margin-top: -6px;
+        }
+
+        button {
+            padding: 12px;
+            font-size: 16px;
+            background-color: #2c7be5;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+            button:hover {
+                background-color: #1a5fb4;
             }
-
-            form {
-                max-width: 450px;
-                margin: 0 auto;
-                font-family: sans-serif;
-            }
-
-            input {
-                margin-bottom: 10px;
-                padding: 8px;
-                width: 100%;
-                box-sizing: border-box;
-            }
-
-            button {
-                padding: 10px 15px;
-                background-color: #2c7be5;
-                color: white;
-                border: none;
-                border-radius: 4px;
-                cursor: pointer;
-            }
-
-                button:hover {
-                    background-color: #1a5fb4;
-                }
-
-            #card-errors {
-                color: red;
-                margin-top: 8px;
-            }
-        </style>
-
-        <!-- Stripe script -->
-        <script src="https://js.stripe.com/v3/"></script>
-    </head>
-
+      </style>
 </head>
 <body>
     <h2>Pay for Two Haircuts + Tips</h2>
@@ -63,51 +78,60 @@
         <label>Stylist B ID: <input id="stylistB" value="acct_XXXXB" /></label><br />
         <label>Tip for Stylist B ($): <input id="tipB" value="10" /></label><br /><br />
 
-        <div id="card-element"></div><br />
+        <div id="card-element"></div>
+        <div id="card-errors"></div><br />
+
         <button type="submit">Pay Now</button>
     </form>
 
     <script>
-        const stripe = Stripe("pk_test_XXXXXXXXXXXXXXXXXXXX"); // your publishable key
-
-        document.getElementById("payment-form").addEventListener("submit", async (e) => {
-            e.preventDefault();
-
-            const stylistA = document.getElementById("stylistA").value;
-            const stylistB = document.getElementById("stylistB").value;
-            const tipA = parseFloat(document.getElementById("tipA").value) || 0;
-            const tipB = parseFloat(document.getElementById("tipB").value) || 0;
-
-            const serviceAmount = 30 + 30; // two $30 services
-            const totalAmount = serviceAmount + tipA + tipB;
-
-            const response = await fetch("/create-payment-intent", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ stylistA, stylistB, tipA, tipB })
-            });
-
-            const { clientSecret, paymentIntentId } = await response.json();
-
+        document.addEventListener("DOMContentLoaded", async () => {
+            const stripe = Stripe("pk_test_XXXXXXXXXXXXXXXXXXXXXXXX");
             const elements = stripe.elements();
-            const card = elements.create("card");
+            const card = elements.create("card", { hidePostalCode: false });
             card.mount("#card-element");
 
-            const result = await stripe.confirmCardPayment(clientSecret, {
-                payment_method: { card: card }
-            });
+            const form = document.getElementById("payment-form");
 
-            if (result.error) {
-                alert("Payment failed: " + result.error.message);
-            } else {
-                await fetch("/confirm-transfers", {
+            form.addEventListener("submit", async (e) => {
+                e.preventDefault();
+
+                const stylistA = document.getElementById("stylistA").value;
+                const stylistB = document.getElementById("stylistB").value;
+                const tipA = parseFloat(document.getElementById("tipA").value || 0);
+                const tipB = parseFloat(document.getElementById("tipB").value || 0);
+
+                console.log("Starting payment with tips:", tipA, tipB);
+
+                const res = await fetch("/create-payment-intent", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ stylistA, stylistB, tipA, tipB })
+                });
+
+                const { clientSecret, paymentIntentId } = await res.json();
+                console.log("Received clientSecret:", clientSecret);
+
+                const result = await stripe.confirmCardPayment(clientSecret, {
+                    payment_method: { card }
+                });
+
+                if (result.error) {
+                    document.getElementById("card-errors").textContent = result.error.message;
+                    return;
+                }
+
+                console.log("Payment succeeded. Confirming transfers...");
+
+                const transferRes = await fetch("/confirm-transfers", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ paymentIntentId, stylistA, stylistB, tipA, tipB })
                 });
 
-                alert("💸 Payment and tips sent to both stylists!");
-            }
+                const transferData = await transferRes.json();
+                alert("💸 Payment and split complete!");
+            });
         });
     </script>
 </body>
