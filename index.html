@@ -3,80 +3,31 @@
 <head>
     <title>Multi-Stylist Payment + Tip</title>
     <script src="https://js.stripe.com/v3/"></script>
-    <style>
-        /* Place your CSS rules here without nesting another <style> tag */
-        #card-element {
-            border: 1px solid #ccc;
-            padding: 10px;
-            border-radius: 6px;
-            max-width: 400px;
-            margin-top: 10px;
-        }
-
-        form {
-            max-width: 450px;
-            margin: 0 auto;
-            font-family: sans-serif;
-        }
-
-        input {
-            margin-bottom: 10px;
-            padding: 8px;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        button {
-            padding: 10px 15px;
-            background-color: #2c7be5;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-            button:hover {
-                background-color: #1a5fb4;
-            }
-
-        #card-errors {
-            color: red;
-            margin-top: 8px;
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <h2>Pay for Two Haircuts + Tips</h2>
 
     <form id="payment-form">
         <div class="form-group">
-            <label for="stylistA">Stylist A ID:</label>
-            <input id="stylistA" value="acct_XXXXA" />
+            <label for="card-number-element">Card Number</label>
+            <div id="card-number-element" class="stripe-input"></div>
         </div>
-
         <div class="form-group">
-            <label for="tipA">Tip for Stylist A ($):</label>
-            <input id="tipA" value="5" />
+            <label for="card-expiry-element">Expiration Date</label>
+            <div id="card-expiry-element" class="stripe-input"></div>
         </div>
-
         <div class="form-group">
-            <label for="stylistB">Stylist B ID:</label>
-            <input id="stylistB" value="acct_XXXXB" />
+            <label for="card-cvc-element">CVC</label>
+            <div id="card-cvc-element" class="stripe-input"></div>
         </div>
-
         <div class="form-group">
-            <label for="tipB">Tip for Stylist B ($):</label>
-            <input id="tipB" value="10" />
+            <label for="postal-code">ZIP / Postal Code</label>
+            <input type="text" id="postal-code" name="postal_code" />
         </div>
-
-        <div class="form-group">
-            <label>Card Details:</label>
-            <div id="card-element"></div>
-            <div id="card-errors"></div>
-        </div>
-
         <button type="submit">Pay Now</button>
     </form>
+
     <script>
         document.addEventListener("DOMContentLoaded", async () => {
             const stripe = Stripe("pk_test_XXXXXXXXXXXXXXXXXXXXXXXX");
