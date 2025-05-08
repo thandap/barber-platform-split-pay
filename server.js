@@ -13,9 +13,9 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Create PaymentIntent (customer pays once)
+// Create PaymentIntent (without fee)
 app.post('/create-payment-intent', async (req, res) => {
-  const amountTotal = 6000; // $60.00 total
+  const amountTotal = 6000; // $60.00
   const stylistA = 'acct_XXXXXXX1';
   const stylistB = 'acct_XXXXXXX2';
 
@@ -24,13 +24,13 @@ app.post('/create-payment-intent', async (req, res) => {
       amount: amountTotal,
       currency: 'usd',
       transfer_group: 'group_booking_xyz',
-      application_fee_amount: 600, // optional platform fee (e.g., $6)
     });
 
     res.send({
       clientSecret: paymentIntent.client_secret,
+      paymentIntentId: paymentIntent.id,
       stylistA,
-      stylistB
+      stylistB,
     });
   } catch (err) {
     console.error('PaymentIntent error:', err.message);
@@ -38,25 +38,27 @@ app.post('/create-payment-intent', async (req, res) => {
   }
 });
 
-// Handle post-payment transfers (trigger after payment)
+// Confirm Transfers After Payment
 app.post('/confirm-transfers', async (req, res) => {
   const { paymentIntentId, stylistA, stylistB } = req.body;
 
   try {
     const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+
     if (paymentIntent.status !== 'succeeded') {
-      return res.status(400).send({ error: 'Payment not complete.' });
+      return res.status(400).send({ error: 'Payment not completed.' });
     }
 
+    // Split funds manually (no application_fee_amount used)
     await stripe.transfers.create({
-      amount: 3000,
+      amount: 3000, // $30 to Stylist A
       currency: 'usd',
       destination: stylistA,
       transfer_group: paymentIntent.transfer_group,
     });
 
     await stripe.transfers.create({
-      amount: 3000,
+      amount: 3000, // $30 to Stylist B
       currency: 'usd',
       destination: stylistB,
       transfer_group: paymentIntent.transfer_group,
@@ -70,4 +72,4 @@ app.post('/confirm-transfers', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 4242;
-app.listen(PORT, () => console.log(`💈 Split-Pay server running on ${PORT}`));
+app.listen(PORT, () => console.log(`💈 Barber split-pay server running on port ${PORT}`));
