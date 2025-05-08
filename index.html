@@ -1,65 +1,53 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Cohesion-Barber Platform Payment</title>
-  <script src="https://js.stripe.com/v3/"></script>
-  <style>
-    #card-element {
-      padding: 12px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      margin-bottom: 12px;
-      max-width: 400px;
-      background: white;
-    }
-    button {
-      padding: 10px 20px;
-      background-color: #0066ff;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      font-size: 16px;
-    }
-  </style>
+    <title>Barber Split Pay Demo</title>
+    <script src="https://js.stripe.com/v3/"></script>
 </head>
 <body>
-  <h2>Pay $1 to Stylist</h2>
-  <form id="payment-form">
-    <div id="card-element"></div>
-    <button type="submit">Pay $1</button>
-  </form>
+    <h2>Pay $60 - Split to Two Stylists</h2>
+    <form id="payment-form">
+        <div id="card-element"></div>
+        <button type="submit">Pay $60</button>
+    </form>
 
-  <script>
-    const stripe = Stripe("pk_test_51RLQeoCVVPDhAwrvywntXX5VX0yOOmxFOUNyNxuiPcXGKoZtTeRkE4lqW5scgYmiu20dOrZgwTTvWR0WaoU3UNSE00aTaujuEx");
+    <script>
+        const stripe = Stripe("pk_test_51RLQeoCVVPDhAwrvywntXX5VX0yOOmxFOUNyNxuiPcXGKoZtTeRkE4lqW5scgYmiu20dOrZgwTTvWR0WaoU3UNSE00aTaujuEx"); // your publishable key
+        let paymentIntentId, stylistA, stylistB;
 
-    fetch("/create-payment-intent", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        connectedAccountId: "acct_1RLQyNE8MyLBL6wn"
-      }),
-    })
-    .then(res => res.json())
-    .then(({ clientSecret }) => {
-      const elements = stripe.elements();
-      const card = elements.create("card");
-      card.mount("#card-element");
+        fetch("/create-payment-intent", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" }
+        })
+            .then(res => res.json())
+            .then(data => {
+                paymentIntentId = data.clientSecret.split('_secret')[0];
+                stylistA = data.stylistA;
+                stylistB = data.stylistB;
 
-      document.getElementById("payment-form").addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const result = await stripe.confirmCardPayment(clientSecret, {
-          payment_method: {
-            card: card
-          }
-        });
+                const elements = stripe.elements();
+                const card = elements.create("card");
+                card.mount("#card-element");
 
-        if (result.error) {
-          alert("❌ Payment failed: " + result.error.message);
-        } else {
-          alert("✅ Payment successful!");
-        }
-      });
-    });
-  </script>
+                document.getElementById("payment-form").addEventListener("submit", async (e) => {
+                    e.preventDefault();
+                    const result = await stripe.confirmCardPayment(data.clientSecret, {
+                        payment_method: { card }
+                    });
+
+                    if (result.error) {
+                        alert("Payment failed: " + result.error.message);
+                    } else {
+                        fetch("/confirm-transfers", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ paymentIntentId, stylistA, stylistB })
+                        })
+                            .then(res => res.json())
+                            .then(() => alert("💸 Payment and split successful!"));
+                    }
+                });
+            });
+    </script>
 </body>
 </html>
