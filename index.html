@@ -1,53 +1,65 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Barber Split Pay Demo</title>
+    <title>Multi-Stylist Payment + Tip</title>
     <script src="https://js.stripe.com/v3/"></script>
 </head>
 <body>
-    <h2>Pay $60 - Split to Two Stylists</h2>
+    <h2>Pay for Two Haircuts + Tips</h2>
+
     <form id="payment-form">
-        <div id="card-element"></div>
-        <button type="submit">Pay $60</button>
+        <label>Stylist A ID: <input id="stylistA" value="acct_XXXXA" /></label><br />
+        <label>Tip for Stylist A ($): <input id="tipA" value="5" /></label><br /><br />
+
+        <label>Stylist B ID: <input id="stylistB" value="acct_XXXXB" /></label><br />
+        <label>Tip for Stylist B ($): <input id="tipB" value="10" /></label><br /><br />
+
+        <div id="card-element"></div><br />
+        <button type="submit">Pay Now</button>
     </form>
 
     <script>
-        const stripe = Stripe("pk_test_51RLQeoCVVPDhAwrvywntXX5VX0yOOmxFOUNyNxuiPcXGKoZtTeRkE4lqW5scgYmiu20dOrZgwTTvWR0WaoU3UNSE00aTaujuEx"); // your publishable key
-        let paymentIntentId, stylistA, stylistB;
+        const stripe = Stripe("pk_test_XXXXXXXXXXXXXXXXXXXX"); // your publishable key
 
-        fetch("/create-payment-intent", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" }
-        })
-            .then(res => res.json())
-            .then(data => {
-                paymentIntentId = data.clientSecret.split('_secret')[0];
-                stylistA = data.stylistA;
-                stylistB = data.stylistB;
+        document.getElementById("payment-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
 
-                const elements = stripe.elements();
-                const card = elements.create("card");
-                card.mount("#card-element");
+            const stylistA = document.getElementById("stylistA").value;
+            const stylistB = document.getElementById("stylistB").value;
+            const tipA = parseFloat(document.getElementById("tipA").value) || 0;
+            const tipB = parseFloat(document.getElementById("tipB").value) || 0;
 
-                document.getElementById("payment-form").addEventListener("submit", async (e) => {
-                    e.preventDefault();
-                    const result = await stripe.confirmCardPayment(data.clientSecret, {
-                        payment_method: { card }
-                    });
+            const serviceAmount = 30 + 30; // two $30 services
+            const totalAmount = serviceAmount + tipA + tipB;
 
-                    if (result.error) {
-                        alert("Payment failed: " + result.error.message);
-                    } else {
-                        fetch("/confirm-transfers", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ paymentIntentId, stylistA, stylistB })
-                        })
-                            .then(res => res.json())
-                            .then(() => alert("💸 Payment and split successful!"));
-                    }
-                });
+            const response = await fetch("/create-payment-intent", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ stylistA, stylistB, tipA, tipB })
             });
+
+            const { clientSecret, paymentIntentId } = await response.json();
+
+            const elements = stripe.elements();
+            const card = elements.create("card");
+            card.mount("#card-element");
+
+            const result = await stripe.confirmCardPayment(clientSecret, {
+                payment_method: { card: card }
+            });
+
+            if (result.error) {
+                alert("Payment failed: " + result.error.message);
+            } else {
+                await fetch("/confirm-transfers", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ paymentIntentId, stylistA, stylistB, tipA, tipB })
+                });
+
+                alert("💸 Payment and tips sent to both stylists!");
+            }
+        });
     </script>
 </body>
 </html>
